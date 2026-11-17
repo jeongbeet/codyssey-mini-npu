@@ -7,6 +7,10 @@ from typing import Any
 from .models import PreparedCase
 from .validation import ValidationError, parse_case_size, validate_matrix
 
+# 별칭 추가와 새 판정 클래스 추가의 차이는 README의 라벨 확장 절차를 참고한다.
+STANDARD_LABELS = ("Cross", "X")
+LABEL_ALIASES = {"+": "Cross", "cross": "Cross", "x": "X"}
+
 
 class DatasetError(ValueError):
     """파일 또는 최상위 JSON 구조를 읽을 수 없는 오류."""
@@ -30,12 +34,11 @@ def load_dataset(path: str | Path) -> dict[str, Any]:
 
 def normalize_label(raw_label: object) -> str:
     if isinstance(raw_label, str):
-        aliases = {"+": "Cross", "cross": "Cross", "x": "X"}
-        normalized = aliases.get(raw_label.strip().lower())
+        normalized = LABEL_ALIASES.get(raw_label.strip().lower())
         if normalized is not None:
             return normalized
     raise ValidationError(
-        f"지원하지 않는 라벨 {raw_label!r}: +/cross/Cross 또는 x/X가 필요합니다."
+        f"지원하지 않는 라벨 {raw_label!r}: {'/'.join(LABEL_ALIASES)}가 필요합니다."
     )
 
 
@@ -67,6 +70,8 @@ def prepare_case(
             filters[label] = validate_matrix(matrix, size)
         except ValidationError as exc:
             raise ValidationError(f"{group_key}/{label} 필터: {exc}") from exc
-    if set(filters) != {"Cross", "X"}:
-        raise ValidationError(f"{group_key}: Cross와 X 필터가 모두 필요합니다.")
+    if set(filters) != set(STANDARD_LABELS):
+        raise ValidationError(
+            f"{group_key}: {', '.join(STANDARD_LABELS)} 필터가 모두 필요합니다."
+        )
     return PreparedCase(case_id, size, pattern, filters, expected)

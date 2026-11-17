@@ -11,8 +11,11 @@ def mac_score(pattern: Matrix, kernel: Matrix) -> float:
     total = 0.0
     n = len(pattern)
     for row in range(n):
+        # 행 참조는 한 번만 읽고 원래의 행 우선 누적 순서를 유지한다.
+        pattern_row = pattern[row]
+        kernel_row = kernel[row]
         for col in range(n):
-            total += pattern[row][col] * kernel[row][col]
+            total += pattern_row[col] * kernel_row[col]
     if not math.isfinite(total):
         raise ArithmeticError("MAC 결과가 유한하지 않습니다. 입력값의 범위를 줄이세요.")
     return total

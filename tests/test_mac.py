@@ -21,6 +21,11 @@ class MacTests(unittest.TestCase):
         with self.assertRaises(ArithmeticError):
             mac_score([[1e308]], [[1e308]])
 
+    def test_row_major_accumulation_order_is_preserved(self):
+        # 행별 부분합을 나중에 합치면 0.0이 되어 기존 판정과 달라지는 사례.
+        pattern = [[1e16, 1.0], [-1e16, 1.0]]
+        self.assertEqual(mac_score(pattern, [[1.0, 1.0], [1.0, 1.0]]), 1.0)
+
     def test_epsilon_boundary_in_both_directions(self):
         epsilon = 1e-9
         for delta, expected in (

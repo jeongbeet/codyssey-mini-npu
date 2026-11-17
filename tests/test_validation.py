@@ -33,6 +33,13 @@ class ValidationTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValidationError):
                 parse_case_size(key)
 
+    def test_value_errors_keep_their_location(self):
+        for value in ("bad", math.inf, 10**1000):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValidationError, "2행 2열"
+            ):
+                validate_matrix([[1.0, 2.0], [3.0, value]], 2)
+
     def test_minimum_repeat_count(self):
         validate_repeats(10)
         for repeats in (9, 0, -1, 10.0, True):

@@ -2,8 +2,11 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from src.data_loader import DatasetError, load_dataset, normalize_label, prepare_case
+from src.data_loader import (
+    LABEL_ALIASES, DatasetError, load_dataset, normalize_label, prepare_case,
+)
 from src.validation import ValidationError
 
 
@@ -33,6 +36,21 @@ class DataLoaderTests(unittest.TestCase):
         case = prepare_case("size_3_1", data["patterns"]["size_3_1"], data["filters"])
         self.assertEqual(case.expected, "Cross")
         self.assertEqual(set(case.filters), {"Cross", "X"})
+
+    def test_new_alias_is_shared_by_expected_and_filter_keys(self):
+        data = sample_dataset()
+        group = data["filters"]["size_3"]
+        group["plus"] = group.pop("cross")
+        data["patterns"]["size_3_1"]["expected"] = " PLUS "
+        with patch.dict(LABEL_ALIASES, {"plus": "Cross"}):
+            case = prepare_case(
+                "size_3_1", data["patterns"]["size_3_1"], data["filters"]
+            )
+            self.assertEqual(case.expected, "Cross")
+            self.assertEqual(set(case.filters), {"Cross", "X"})
+            group["cross"] = matrix()
+            with self.assertRaisesRegex(ValidationError, "중복"):
+                prepare_case("size_3_1", data["patterns"]["size_3_1"], data["filters"])
 
     def test_duplicate_normalized_filter_is_rejected(self):
         data = sample_dataset()

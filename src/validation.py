@@ -25,15 +25,21 @@ def validate_matrix(matrix: object, n: int) -> Matrix:
             )
         converted = []
         for col_index, value in enumerate(row):
-            location = f"{row_index + 1}행 {col_index + 1}열"
+            # 정상 원소마다 위치 문자열을 만들지 않고 오류가 난 경우에만 만든다.
             if isinstance(value, bool) or not isinstance(value, (int, float)):
-                raise ValidationError(f"{location}: 숫자만 허용합니다.")
+                raise ValidationError(
+                    f"{row_index + 1}행 {col_index + 1}열: 숫자만 허용합니다."
+                )
             try:
                 number = float(value)
             except (ValueError, OverflowError) as exc:
-                raise ValidationError(f"{location}: 숫자 범위를 초과했습니다.") from exc
+                raise ValidationError(
+                    f"{row_index + 1}행 {col_index + 1}열: 숫자 범위를 초과했습니다."
+                ) from exc
             if not math.isfinite(number):
-                raise ValidationError(f"{location}: NaN과 무한대는 허용하지 않습니다.")
+                raise ValidationError(
+                    f"{row_index + 1}행 {col_index + 1}열: NaN과 무한대는 허용하지 않습니다."
+                )
             converted.append(number)
         validated.append(converted)
     return validated
