@@ -120,7 +120,7 @@ def profile_mac(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="CPU 반복문 MAC 시간·메모리 진단")
+    parser = argparse.ArgumentParser(description="2D 기준 구현의 CPU MAC 시간·메모리 진단")
     parser.add_argument("--size", type=int, default=1000)
     parser.add_argument("--repeats", type=int, default=10, help="필터별 최소 10회")
     parser.add_argument("--memory-budget-mib", type=float, default=256)
@@ -131,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"진단 오류: {exc}", file=sys.stderr)
         return 2
 
-    print(f"CPU MAC 진단: {result.size}x{result.size}, 필터별 {result.repeats}회")
+    print(f"2D CPU MAC 진단: {result.size}x{result.size}, 필터별 {result.repeats}회")
     print(f"입력 생성 1회 (3개 행렬): {result.generation_ms:.6f} ms")
     print(f"검증 1회 (3개 행렬): {result.validation_ms:.6f} ms")
     print(f"MAC 함수 1회 평균: {result.mac_mean_ms:.6f} ms")

@@ -10,10 +10,14 @@ class ValidationError(ValueError):
     """사용자에게 원인을 설명할 수 있는 입력 검증 오류."""
 
 
-def validate_matrix(matrix: object, n: int) -> Matrix:
-    """N×N의 유한한 수를 검사하고 float 행렬의 복사본을 반환한다."""
+def validate_size(n: int) -> None:
     if isinstance(n, bool) or not isinstance(n, int) or n < 1:
         raise ValidationError("행렬 크기는 양의 정수여야 합니다.")
+
+
+def validate_matrix(matrix: object, n: int) -> Matrix:
+    """N×N의 유한한 수를 검사하고 float 행렬의 복사본을 반환한다."""
+    validate_size(n)
     if not isinstance(matrix, list) or len(matrix) != n:
         raise ValidationError(f"행 수 불일치: {n}개의 행이 필요합니다.")
 

@@ -7,8 +7,8 @@ def format_score(score: float | None) -> str:
     return "-" if score is None else f"{score:.12g}"
 
 
-def print_matrix(name: str, matrix: Matrix) -> None:
-    print(f"{name} 저장 확인:")
+def print_matrix(title: str, matrix: Matrix) -> None:
+    print(f"{title}:")
     for row in matrix:
         print("  " + " ".join(format_score(value) for value in row))
 
@@ -40,18 +40,21 @@ def print_case_result(result: CaseResult) -> None:
 
 
 def print_benchmarks(results: list[BenchmarkResult]) -> None:
-    print("\n성능 분석 — MAC 함수 1회 기준 평균")
-    print("크기(N×N)   평균 시간(ms)   연산 횟수(N²)   필터별 반복   총 호출")
+    print("\n성능 분석 — 동일 입력의 MAC 함수 1회 평균")
+    print("크기(N×N)    2D 평균(ms)   1D 평균(ms)   2D/1D   변환(ms)   MAC 횟수(N²)   필터별 반복   구현당 호출   입력")
     for result in results:
         size = f"{result.size}x{result.size}"
-        print(
-            f"{size:<10} {result.average_ms:>12.6f} "
-            f"{result.mac_count:>14} {result.repeats_per_filter:>12} "
-            f"{result.total_calls:>9}"
+        ratio = (
+            f"{result.average_ms / result.flat_average_ms:.2f}x"
+            if result.flat_average_ms else "-"
         )
-    for result in results:
-        print(f"  {result.size}x{result.size} 측정 데이터: {result.source}")
-    print("입력·출력·파일 읽기·검증·데이터 생성·워밍업은 측정 시간에서 제외합니다.")
+        print(
+            f"{size:<10} {result.average_ms:>11.6f} {result.flat_average_ms:>13.6f} "
+            f"{ratio:>7} {result.flatten_ms:>11.6f} "
+            f"{result.mac_count:>14} {result.repeats_per_filter:>12} "
+            f"{result.total_calls:>9}   {result.source}"
+        )
+    print("변환은 패턴과 필터를 한 번 펼친 시간입니다. 두 평균은 MAC 호출만 측정합니다.")
     print("N²는 필터 1개의 MAC 누적 횟수이며, 두 필터의 판정은 2N²회입니다.")
 
 

@@ -7,7 +7,7 @@ from typing import Any
 from .benchmark import benchmark_mac, make_benchmark_fixture
 from .data_loader import load_dataset, prepare_case
 from .input_handler import read_matrix
-from .mac import decide, mac_score
+from .mac import decide, flatten_matrix, mac_score_flat
 from .models import (
     BENCHMARK_SIZES,
     DEFAULT_REPEATS,
@@ -15,6 +15,7 @@ from .models import (
     CaseResult,
     PreparedCase,
 )
+from .patterns import generate_pattern
 from .report import (
     print_benchmarks,
     print_case_result,
@@ -27,8 +28,9 @@ from .validation import ValidationError, validate_epsilon
 
 def evaluate_case(case: PreparedCase, epsilon: float = EPSILON) -> CaseResult:
     try:
-        cross = mac_score(case.pattern, case.filters["Cross"])
-        diagonal = mac_score(case.pattern, case.filters["X"])
+        pattern = flatten_matrix(case.pattern)
+        cross = mac_score_flat(pattern, flatten_matrix(case.filters["Cross"]))
+        diagonal = mac_score_flat(pattern, flatten_matrix(case.filters["X"]))
         decision = decide(cross, diagonal, "Cross", "X", epsilon)
     except ArithmeticError as exc:
         return CaseResult(
@@ -74,23 +76,41 @@ def analyze_dataset(
     return results, representatives
 
 
-def run_manual_mode(epsilon: float = EPSILON, repeats: int = DEFAULT_REPEATS) -> int:
-    filter_a = read_matrix("필터 A", 3)
-    filter_b = read_matrix("필터 B", 3)
-    print_matrix("필터 A", filter_a)
-    print_matrix("필터 B", filter_b)
-    pattern = read_matrix("패턴", 3)
+def run_manual_mode(
+    epsilon: float = EPSILON, repeats: int = DEFAULT_REPEATS, size: int = 3
+) -> int:
+    filter_a = read_matrix("필터 A", size)
+    filter_b = read_matrix("필터 B", size)
+    print_matrix("필터 A 저장 확인", filter_a)
+    print_matrix("필터 B 저장 확인", filter_b)
+    pattern = read_matrix("패턴", size)
 
+    flat_pattern = flatten_matrix(pattern)
+    flat_a = flatten_matrix(filter_a)
+    flat_b = flatten_matrix(filter_b)
     start = perf_counter_ns()
-    score_a = mac_score(pattern, filter_a)
+    score_a = mac_score_flat(flat_pattern, flat_a)
     time_a_ms = (perf_counter_ns() - start) / 1_000_000
     start = perf_counter_ns()
-    score_b = mac_score(pattern, filter_b)
+    score_b = mac_score_flat(flat_pattern, flat_b)
     time_b_ms = (perf_counter_ns() - start) / 1_000_000
 
     decision = decide(score_a, score_b, "A", "B", epsilon)
     print_manual_result(score_a, score_b, time_a_ms, time_b_ms, decision, epsilon)
     print_benchmarks([benchmark_mac(pattern, [filter_a, filter_b], repeats)])
+    return 0
+
+
+def run_generate_mode(size: int, repeats: int = DEFAULT_REPEATS) -> int:
+    labels = ("Cross", "X")
+    patterns = [generate_pattern(size, label) for label in labels]
+    for label, pattern in zip(labels, patterns):
+        print_matrix(f"{label} ({size}×{size})", pattern)
+    # 각 모양을 한 번씩 입력으로 삼아 같은 필터 쌍과 비교한다.
+    print_benchmarks([
+        benchmark_mac(pattern, patterns, repeats, f"생성 패턴 {label}")
+        for label, pattern in zip(labels, patterns)
+    ])
     return 0
 
 

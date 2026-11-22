@@ -1,9 +1,26 @@
-"""이중 반복문 MAC과 절대오차 기반 판정."""
+"""행렬과 1차원 리스트의 반복문 MAC 및 절대오차 기반 판정."""
 
 import math
 
 from .models import EPSILON, Matrix
 from .validation import validate_epsilon
+
+
+def flatten_matrix(matrix: Matrix) -> list[float]:
+    """검증된 N×N 행렬을 행 우선 순서의 N²개 원소로 펼친다."""
+    return [value for row in matrix for value in row]
+
+
+def mac_score_flat(pattern: list[float], kernel: list[float]) -> float:
+    """미리 펼친 두 입력을 처음부터 끝까지 같은 순서로 곱해 더한다."""
+    if len(pattern) != len(kernel):
+        raise ValueError("패턴과 필터의 길이가 달라 MAC을 계산할 수 없습니다.")
+    total = 0.0
+    for value, weight in zip(pattern, kernel):
+        total += value * weight
+    if not math.isfinite(total):
+        raise ArithmeticError("MAC 결과가 유한하지 않습니다. 입력값의 범위를 줄이세요.")
+    return total
 
 
 def mac_score(pattern: Matrix, kernel: Matrix) -> float:

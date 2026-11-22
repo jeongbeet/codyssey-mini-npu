@@ -2,15 +2,30 @@
 
 import math
 
+from .data_loader import LABEL_ALIASES
 from .models import Matrix
-from .validation import validate_matrix
+from .patterns import generate_pattern
+from .validation import validate_matrix, validate_size
+
+
+def read_size() -> int:
+    while True:
+        try:
+            size = int(input("생성할 패턴 크기 N > "))
+            validate_size(size)
+            return size
+        except ValueError:
+            print("크기는 양의 정수로 입력하세요.")
 
 
 def read_matrix(name: str, n: int) -> Matrix:
     print(f"\n{name}: {n}줄을 입력하세요. 각 줄은 공백으로 구분한 숫자 {n}개입니다.")
+    print("자동 생성하려면 첫 줄에 cross 또는 x를 입력하세요.")
     rows: Matrix = []
     while len(rows) < n:
         line = input(f"  {len(rows) + 1}/{n}행 > ")
+        if not rows and line.strip().lower() in LABEL_ALIASES:
+            return generate_pattern(n, line)
         tokens = line.split()
         if len(tokens) != n:
             print(f"입력 형식 오류: 각 줄에 {n}개의 숫자를 공백으로 구분해 입력하세요.")

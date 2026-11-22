@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from src.mac import decide, mac_score
+from src.mac import decide, flatten_matrix, mac_score, mac_score_flat
 from src.validation import ValidationError
 
 
@@ -25,6 +25,14 @@ class MacTests(unittest.TestCase):
         # 행별 부분합을 나중에 합치면 0.0이 되어 기존 판정과 달라지는 사례.
         pattern = [[1e16, 1.0], [-1e16, 1.0]]
         self.assertEqual(mac_score(pattern, [[1.0, 1.0], [1.0, 1.0]]), 1.0)
+        self.assertEqual(flatten_matrix(pattern), [1e16, 1.0, -1e16, 1.0])
+        self.assertEqual(mac_score_flat(flatten_matrix(pattern), [1.0] * 4), 1.0)
+
+    def test_flat_mac_rejects_length_mismatch_and_overflow(self):
+        with self.assertRaises(ValueError):
+            mac_score_flat([3.0, 4.0], [1.0])
+        with self.assertRaises(ArithmeticError):
+            mac_score_flat([1e308], [1e308])
 
     def test_epsilon_boundary_in_both_directions(self):
         epsilon = 1e-9

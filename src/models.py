@@ -37,6 +37,8 @@ class BenchmarkResult:
     repeats_per_filter: int
     filter_count: int
     source: str
+    flat_average_ms: float
+    flatten_ms: float
 
     @property
     def mac_count(self) -> int:

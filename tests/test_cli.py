@@ -43,7 +43,7 @@ class CliTests(unittest.TestCase):
             result = self.run_app("--mode", "json", "--repeats", "10", cwd=directory)
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("전체 테스트: 6 | PASS: 3 | FAIL: 3", result.stdout)
-        self.assertIn("3x3 측정 데이터: 측정용 생성 데이터", result.stdout)
+        self.assertRegex(result.stdout, r"3x3\s+[^\n]*측정용 생성 데이터")
         for size in ("5x5", "13x13", "25x25"):
             self.assertIn(size, result.stdout)
 
@@ -69,10 +69,31 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("UNDECIDED (판정 불가)", result.stdout)
 
+    def test_manual_generated_inputs_and_flat_scores(self):
+        for n, score_a, score_b, decision in ((5, 1, 9, "B"), (1, 1, 1, "UNDECIDED")):
+            with self.subTest(n=n):
+                result = self.run_app("--mode", "manual", "--size", str(n), input_text="cross\nX\nx\n")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"A 점수: {score_a} |", result.stdout)
+                self.assertIn(f"B 점수: {score_b} |", result.stdout)
+                self.assertIn(f"판정: {decision}", result.stdout)
+                self.assertIn("2D/1D", result.stdout)
+
+    def test_generator_cli_and_interactive_size_retry(self):
+        for args, inputs in ((("--mode", "generate", "--size", "4"), ""),
+                             ((), "3\n0\nbad\n4\n0\n")):
+            with self.subTest(args=args):
+                result = self.run_app("--repeats", "10", *args, input_text=inputs)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("Cross (4×4):\n  0 0 1 0", result.stdout)
+                self.assertIn("X (4×4):\n  1 0 0 1", result.stdout)
+                for label in ("Cross", "X"):
+                    self.assertRegex(result.stdout, rf"4x4\s+[^\n]*생성 패턴 {label}")
+
     def test_interactive_menu(self):
         result = self.run_app("--repeats", "10", input_text="bad\n2\n0\n")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("0, 1, 2 중 하나", result.stdout)
+        self.assertIn("0, 1, 2, 3 중 하나", result.stdout)
         self.assertIn("전체 테스트: 6 | PASS: 3 | FAIL: 3", result.stdout)
 
     def test_file_error_returns_to_menu(self):
@@ -97,6 +118,7 @@ class CliTests(unittest.TestCase):
 
     def test_invalid_options(self):
         for args in (
+            ("--mode", "generate", "--size", "0"),
             ("--repeats", "9"), ("--epsilon", "0"),
             ("--epsilon", "nan"), ("--epsilon", "inf"),
         ):
